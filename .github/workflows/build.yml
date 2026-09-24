@@ -1,46 +1,36 @@
-name: Clash of Clans API CI
-
+name: Update Clan Data (Daily)
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  schedule:
+    - cron: '0 9 * * *' # Runs once a day at 9am UTC
+  workflow_dispatch:
 
 jobs:
-  build-and-run:
+  update-clan:
     runs-on: ubuntu-latest
-
     steps:
-    # 1. Checkout repository dari GitHub
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout Repo
+        uses: actions/checkout@v3
 
-    # 2. Setup environment Python
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    # 3. Cache dependencies agar build lebih cepat
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+      - name: Install Dependencies
+        run: pip install requests python-dotenv
 
-    # 4. Install library yang dibutuhkan
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Run Clan Scraper
+        env:
+          COC_API_TOKEN: ${{ secrets.COC_API_TOKEN }}
+          CLAN_TAG: ${{ secrets.CLAN_TAG }}
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)/scrapers
+          python scrapers/clan_scraper.py
 
-    # 5. Jalankan script Python dengan Repository Secrets
-    - name: Run CoC Script
-      env:
-        YOUR_API_TOKEN_HERE: ${{ secrets.COC_API_TOKEN }}
-        CLAN_TAG: ${{ secrets.COC_CLAN_TAG }}
-      run: |
-        python app.py
-        
+      - name: Commit and Push
+        run: |
+          git config --global user.name "Stats Bot"
+          git config --global user.email "bot@github.com"
+          git add data/
+          git commit -m "Auto-update clan members" || exit 0
+          git push
