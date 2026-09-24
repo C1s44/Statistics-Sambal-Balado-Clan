@@ -1,0 +1,58 @@
+/* Reset dasar */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: #121016; /* Warna latar belakang gelap */
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+}
+
+/* Container utama navigasi melayang */
+.floating-nav {
+    position: fixed;
+    bottom: 30px; /* Jarak dari bawah layar */
+    left: 50%;
+    transform: translateX(-50%); /* Mengetengahkan posisi navigasi */
+    
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    
+    background-color: #23202e; /* Warna latar bar navigasi */
+    padding: 6px;
+    border-radius: 30px; /* Membuat sudut menjadi sangat membulat */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Efek garis tepi tipis */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); /* Efek bayangan melayang */
+    z-index: 1000;
+}
+
+/* Gaya tombol navigasi */
+.nav-btn {
+    background: transparent;
+    border: none;
+    color: #a09cb0; /* Warna teks tombol tidak aktif */
+    padding: 10px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* Gaya tombol saat aktif (seperti tombol 'Home') */
+.nav-btn.active {
+    background-color: #5c3eb8; /* Warna ungu tombol aktif */
+    color: #ffffff; /* Warna teks aktif */
+}
+
+/* Efek hover ketika kursor diarahkan ke tombol tidak aktif */
+.nav-btn:hover:not(.active) {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+}
