@@ -1,38 +1,32 @@
-name: Auto Update CoC Data
+name: Auto Update CoC JSON Data
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # Berjalan otomatis tiap 6 jam
-  workflow_dispatch: # Supaya bisa di-run manual
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
-  build-and-update:
+  update-data:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          python-version: '3.11'
+          node-version: '18'
 
-      - name: Install Dependencies
-        run: pip install -r requirements.txt
-
-      - name: Fetch CoC Data
+      - name: Fetch Latest Data from CoC API
         env:
           COC_API_TOKEN: ${{ secrets.COC_API_TOKEN }}
-          CLAN_TAG: ${{ secrets.CLAN_TAG }}
-        run: python main.py
+        run: node fetch-coc.js
 
-      - name: Commit & Push Changes
+      - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update CoC stats" && git push)
+          git add members_latest.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update CoC JSON data [skip ci]" && git push)
           
