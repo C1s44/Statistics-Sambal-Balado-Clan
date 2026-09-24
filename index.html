@@ -1,36 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CoC War Stats</title>
-    
-    <!-- External Dependencies -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Custom Styles -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoC War Stats Checker</title>
     <link rel="stylesheet" href="balado.css">
 </head>
-<body class="p-3 md:p-10">
+<body>
+    <div class="container">
+        <header>
+            <h1>⚔️ CoC War Stats Checker</h1>
+            <p>Pantau Statistik Perang Clan Clash of Clans Real-Time</p>
+        </header>
 
-    <!-- Tempat Data Statistik / Member Ditampilkan -->
-    <main class="content">
-        <!-- Isi akan diisi otomatis oleh app.js -->
-    </main>
+        <!-- Form Input API Key dan Tag Clan -->
+        <section class="form-section">
+            <div class="input-group">
+                <label for="apiToken">API Token Supercell:</label>
+                <input type="password" id="apiToken" placeholder="Masukkan API Token CoC...">
+            </div>
+            <div class="input-group">
+                <label for="clanTag">Tag Clan (tanpa #):</label>
+                <input type="text" id="clanTag" placeholder="Contoh: 2PP92L8V">
+            </div>
+            <button id="fetchBtn" onclick="getWarStats()">Cek Statistik War</button>
+        </section>
 
-    <!-- Floating Navigation Bar -->
-    <nav class="floating-nav">
-        <button class="nav-btn active">statistik</button>
-        <button class="nav-btn">member</button>
-    </nav>
+        <!-- Spinner Loading -->
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <p>Mengambil data dari Supercell...</p>
+        </div>
 
-    <!-- Script Pengendali Data -->
-    <script type="module" src="app.js"></script>
-    
+        <!-- Notifikasi Pesan Error -->
+        <div id="errorMsg" class="error-box hidden"></div>
+
+        <!-- Tampilan Data War -->
+        <main id="statsContainer" class="hidden">
+            <!-- Header Status Perang -->
+            <div class="card war-header">
+                <h2 id="warState">WAR STATE</h2>
+                <p id="warEndTime"></p>
+            </div>
+
+            <!-- Komparasi Skor Tim -->
+            <div class="war-vs">
+                <!-- Home Clan -->
+                <div class="clan-card home">
+                    <img id="clanBadge" src="" alt="Clan Badge">
+                    <h3 id="clanName">Clan Name</h3>
+                    <p id="clanTagDisplay" class="tag"></p>
+                    <div class="stat-box">
+                        <span class="label">Bintang:</span>
+                        <span id="clanStars" class="value highlight">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">Kerusakan (Destruction):</span>
+                        <span id="clanDestruction" class="value">0%</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">Serangan Digunakan:</span>
+                        <span id="clanAttacks" class="value">0</span>
+                    </div>
+                </div>
+
+                <div class="vs-divider">VS</div>
+
+                <!-- Opponent Clan -->
+                <div class="clan-card opponent">
+                    <img id="oppBadge" src="" alt="Opponent Badge">
+                    <h3 id="oppName">Opponent Name</h3>
+                    <p id="oppTagDisplay" class="tag"></p>
+                    <div class="stat-box">
+                        <span class="label">Bintang:</span>
+                        <span id="oppStars" class="value highlight">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">Kerusakan (Destruction):</span>
+                        <span id="oppDestruction" class="value">0%</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">Serangan Digunakan:</span>
+                        <span id="oppAttacks" class="value">0</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="api.js"></script>
 </body>
 </html>

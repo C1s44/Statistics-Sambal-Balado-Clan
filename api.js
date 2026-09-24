@@ -1,80 +1,90 @@
-import { fetchClanData } from './api.js';
+async function getWarStats() {
+    const token = document.getElementById('apiToken').value.trim();
+    let clanTag = document.getElementById('clanTag').value.trim();
 
-// Ambil elemen dari HTML
-const contentArea = document.querySelector('.content');
-const navBtns = document.querySelectorAll('.nav-btn');
+    const loading = document.getElementById('loading');
+    const errorMsg = document.getElementById('errorMsg');
+    const statsContainer = document.getElementById('statsContainer');
 
-let currentClanData = null;
+    // Reset tampilan
+    errorMsg.classList.add('hidden');
+    statsContainer.classList.add('hidden');
 
-// Fungsi untuk load data pertama kali
-async function initApp() {
+    // Validasi input
+    if (!token || !clanTag) {
+        showError('Harap isi API Token dan Tag Clan!');
+        return;
+    }
+
+    // Bersihkan tag (tambahkan %23 pengganti # untuk URL encoding)
+    clanTag = clanTag.replace('#', '');
+    const encodedTag = `%23${clanTag}`;
+
+    loading.classList.remove('hidden');
+
     try {
-        contentArea.innerHTML = '<p class="text-white text-center">Loading data...</p>';
-        currentClanData = await fetchClanData();
-        renderStatistik(); // Default tampilkan statistik
+        // Endpoint resmi Supercell CoC API untuk Current War
+        const url = `https://api.clashofclans.com/v1/clans/${encodedTag}/currentwar`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 403) {
+                throw new Error('API Key tidak valid atau IP Access belum dikonfigurasi di portal developer.');
+            } else if (response.status === 404) {
+                throw new Error('Clan tidak ditemukan atau clan war bersifat privat.');
+            } else {
+                throw new Error(`Gagal mengambil data. Kode error: ${response.status}`);
+            }
+        }
+
+        const data = await response.json();
+
+        if (data.state === 'notInWar') {
+            showError('Clan saat ini sedang tidak dalam kondisi War (Not in War).');
+            return;
+        }
+
+        // Render Data ke HTML
+        renderWarData(data);
+        statsContainer.classList.remove('hidden');
+
     } catch (err) {
-        console.error(err);
-        contentArea.innerHTML = `<p class="text-red-500 text-center">Gagal memuat data: ${err.message}</p>`;
+        showError(err.message);
+    } finally {
+        loading.classList.add('hidden');
     }
 }
 
-// Tampilan Menu Statistik
-function renderStatistik() {
-    if (!currentClanData) return;
-    contentArea.innerHTML = `
-        <div class="text-white space-y-4 max-w-lg mx-auto">
-            <h1 class="text-2xl font-bold">${currentClanData.name}</h1>
-            <p class="text-gray-400">${currentClanData.tag}</p>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-gray-800 p-4 rounded-lg">
-                    <p class="text-sm text-gray-400">Level Klan</p>
-                    <p class="text-xl font-bold">${currentClanData.clanLevel}</p>
-                </div>
-                <div class="bg-gray-800 p-4 rounded-lg">
-                    <p class="text-sm text-gray-400">Total Poin</p>
-                    <p class="text-xl font-bold">${currentClanData.clanPoints}</p>
-                </div>
-            </div>
-        </div>
-    `;
+function renderWarData(data) {
+    // Info Umum War
+    document.getElementById('warState').innerText = `STATUS WAR: ${data.state.toUpperCase()}`;
+
+    // Clan Player
+    document.getElementById('clanBadge').src = data.clan.badgeUrls?.medium || '';
+    document.getElementById('clanName').innerText = data.clan.name;
+    document.getElementById('clanTagDisplay').innerText = data.clan.tag;
+    document.getElementById('clanStars').innerText = data.clan.stars || 0;
+    document.getElementById('clanDestruction').innerText = `${(data.clan.destructionPercentage || 0).toFixed(2)}%`;
+    document.getElementById('clanAttacks').innerText = data.clan.attacks || 0;
+
+    // Musuh
+    document.getElementById('oppBadge').src = data.opponent.badgeUrls?.medium || '';
+    document.getElementById('oppName').innerText = data.opponent.name;
+    document.getElementById('oppTagDisplay').innerText = data.opponent.tag;
+    document.getElementById('oppStars').innerText = data.opponent.stars || 0;
+    document.getElementById('oppDestruction').innerText = `${(data.opponent.destructionPercentage || 0).toFixed(2)}%`;
+    document.getElementById('oppAttacks').innerText = data.opponent.attacks || 0;
 }
 
-// Tampilan Menu Member
-function renderMember() {
-    if (!currentClanData || !currentClanData.memberList) return;
-    
-    const membersHtml = currentClanData.memberList.map(m => `
-        <div class="flex justify-between items-center bg-gray-800 p-3 rounded mb-2 text-white">
-            <div>
-                <p class="font-semibold">${m.name}</p>
-                <p class="text-xs text-gray-400">${m.role}</p>
-            </div>
-            <p class="text-yellow-400">🏆 ${m.trophies}</p>
-        </div>
-    `).join('');
-
-    contentArea.innerHTML = `
-        <div class="max-w-lg mx-auto">
-            <h2 class="text-xl font-bold text-white mb-4">Daftar Member (${currentClanData.members}/50)</h2>
-            ${membersHtml}
-        </div>
-    `;
+function showError(message) {
+    const errorMsg = document.getElementById('errorMsg');
+    errorMsg.innerText = message;
+    errorMsg.classList.remove('hidden');
 }
-
-// Event Listener Tombol Navigasi
-navBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        navBtns.forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-
-        const menuName = e.target.innerText.trim().toLowerCase();
-        if (menuName === 'statistik') {
-            renderStatistik();
-        } else if (menuName === 'member') {
-            renderMember();
-        }
-    });
-});
-
-// Jalankan saat aplikasi dibuka
-initApp();
