@@ -1,90 +1,31 @@
-async function getWarStats() {
-    const token = document.getElementById('apiToken').value.trim();
-    let clanTag = document.getElementById('clanTag').value.trim();
+const fs = require('fs');
 
-    const loading = document.getElementById('loading');
-    const errorMsg = document.getElementById('errorMsg');
-    const statsContainer = document.getElementById('statsContainer');
+// Tag Klan Anda (ganti # dengan %23 untuk URL)
+const CLAN_TAG = '%23CPJQ2JV'; 
+const API_TOKEN = process.env.COC_API_TOKEN; // Diambil dari environment variable
 
-    // Reset tampilan
-    errorMsg.classList.add('hidden');
-    statsContainer.classList.add('hidden');
+async function getClanData() {
+  try {
+    const response = await fetch(`https://api.clashofclans.com/v1/clans/${CLAN_TAG}`, {
+      headers: {
+        'Authorization': `Bearer ${API_TOKEN}`,
+        'Accept': 'application/json'
+      }
+    });
 
-    // Validasi input
-    if (!token || !clanTag) {
-        showError('Harap isi API Token dan Tag Clan!');
-        return;
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    // Bersihkan tag (tambahkan %23 pengganti # untuk URL encoding)
-    clanTag = clanTag.replace('#', '');
-    const encodedTag = `%23${clanTag}`;
+    const data = await response.json();
 
-    loading.classList.remove('hidden');
-
-    try {
-        // Endpoint resmi Supercell CoC API untuk Current War
-        const url = `https://api.clashofclans.com/v1/clans/${encodedTag}/currentwar`;
-
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            if (response.status === 403) {
-                throw new Error('API Key tidak valid atau IP Access belum dikonfigurasi di portal developer.');
-            } else if (response.status === 404) {
-                throw new Error('Clan tidak ditemukan atau clan war bersifat privat.');
-            } else {
-                throw new Error(`Gagal mengambil data. Kode error: ${response.status}`);
-            }
-        }
-
-        const data = await response.json();
-
-        if (data.state === 'notInWar') {
-            showError('Clan saat ini sedang tidak dalam kondisi War (Not in War).');
-            return;
-        }
-
-        // Render Data ke HTML
-        renderWarData(data);
-        statsContainer.classList.remove('hidden');
-
-    } catch (err) {
-        showError(err.message);
-    } finally {
-        loading.classList.add('hidden');
-    }
+    // Simpan data ke file JSON (misal: members_latest.json)
+    fs.writeFileSync('members_latest.json', JSON.stringify(data, null, 4));
+    console.log('File JSON berhasil diperbarui!');
+  } catch (error) {
+    console.error('Gagal mengambil data:', error);
+    process.exit(1);
+  }
 }
 
-function renderWarData(data) {
-    // Info Umum War
-    document.getElementById('warState').innerText = `STATUS WAR: ${data.state.toUpperCase()}`;
-
-    // Clan Player
-    document.getElementById('clanBadge').src = data.clan.badgeUrls?.medium || '';
-    document.getElementById('clanName').innerText = data.clan.name;
-    document.getElementById('clanTagDisplay').innerText = data.clan.tag;
-    document.getElementById('clanStars').innerText = data.clan.stars || 0;
-    document.getElementById('clanDestruction').innerText = `${(data.clan.destructionPercentage || 0).toFixed(2)}%`;
-    document.getElementById('clanAttacks').innerText = data.clan.attacks || 0;
-
-    // Musuh
-    document.getElementById('oppBadge').src = data.opponent.badgeUrls?.medium || '';
-    document.getElementById('oppName').innerText = data.opponent.name;
-    document.getElementById('oppTagDisplay').innerText = data.opponent.tag;
-    document.getElementById('oppStars').innerText = data.opponent.stars || 0;
-    document.getElementById('oppDestruction').innerText = `${(data.opponent.destructionPercentage || 0).toFixed(2)}%`;
-    document.getElementById('oppAttacks').innerText = data.opponent.attacks || 0;
-}
-
-function showError(message) {
-    const errorMsg = document.getElementById('errorMsg');
-    errorMsg.innerText = message;
-    errorMsg.classList.remove('hidden');
-}
+getClanData();

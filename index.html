@@ -1,93 +1,251 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoC War Stats Checker</title>
-    <link rel="stylesheet" href="balado.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informasi Klan Clash of Clans</title>
+  <style>
+    /* CSS Sederhana & Responsive */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header Klan */
+    .clan-header {
+      background-color: #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+
+    .clan-badge {
+      width: 100px;
+      height: 100px;
+    }
+
+    .clan-info h1 {
+      color: #f59e0b;
+      font-size: 2rem;
+      margin-bottom: 5px;
+    }
+
+    .clan-meta {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .clan-description {
+      font-style: italic;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    /* Section Anggota */
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      color: #38bdf8;
+      border-bottom: 2px solid #334155;
+      padding-bottom: 8px;
+    }
+
+    .member-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    /* Card Anggota */
+    .member-card {
+      background-color: #1e293b;
+      border-radius: 8px;
+      padding: 16px;
+      border-left: 4px solid #3b82f6;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .member-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    }
+
+    .member-card.leader {
+      border-left-color: #ef4444; /* Warna merah untuk Leader */
+    }
+
+    .member-card.coLeader {
+      border-left-color: #f59e0b; /* Warna kuning untuk Co-Leader */
+    }
+
+    .member-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .member-name {
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #ffffff;
+    }
+
+    .member-rank {
+      background-color: #334155;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .member-role {
+      font-size: 0.85rem;
+      color: #38bdf8;
+      text-transform: capitalize;
+      margin-bottom: 8px;
+    }
+
+    .member-details {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .donations {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed #334155;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Message jika error */
+    .error-msg {
+      color: #ef4444;
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: 50px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>⚔️ CoC War Stats Checker</h1>
-            <p>Pantau Statistik Perang Clan Clash of Clans Real-Time</p>
-        </header>
 
-        <!-- Form Input API Key dan Tag Clan -->
-        <section class="form-section">
-            <div class="input-group">
-                <label for="apiToken">API Token Supercell:</label>
-                <input type="password" id="apiToken" placeholder="Masukkan API Token CoC...">
-            </div>
-            <div class="input-group">
-                <label for="clanTag">Tag Clan (tanpa #):</label>
-                <input type="text" id="clanTag" placeholder="Contoh: 2PP92L8V">
-            </div>
-            <button id="fetchBtn" onclick="getWarStats()">Cek Statistik War</button>
-        </section>
+  <div class="container">
+    <!-- Area Informasi Klan -->
+    <header id="clan-header" class="clan-header">
+      <p>Memuat data klan...</p>
+    </header>
 
-        <!-- Spinner Loading -->
-        <div id="loading" class="hidden">
-            <div class="spinner"></div>
-            <p>Mengambil data dari Supercell...</p>
+    <!-- Area Daftar Anggota -->
+    <main>
+      <h2 class="section-title">Daftar Anggota</h2>
+      <div id="member-grid" class="member-grid">
+        <!-- Kartu anggota akan dimasukkan di sini via JS -->
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // URL file JSON lokal
+    const jsonFile = 'members_latest.json';
+
+    // Mengambil data dari JSON
+    fetch(jsonFile)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Gagal mengambil file JSON');
+        }
+        return response.json();
+      })
+      .then(data => {
+        renderClanHeader(data);
+        renderMemberList(data.memberList);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('clan-header').innerHTML = 
+          `<p class="error-msg">Gagal memuat data. Pastikan file JSON berada di folder yang sama dan diakses via server (Live Server).</p>`;
+      });
+
+    // Fungsi menampilkan header klan
+    function renderClanHeader(clan) {
+      const headerEl = document.getElementById('clan-header');
+      headerEl.innerHTML = `
+        <img class="clan-badge" src="${clan.badgeUrls.medium}" alt="Logo Klan ${clan.name}">
+        <div class="clan-info">
+          <h1>${clan.name} <span style="font-size: 1rem; color: #94a3b8;">(${clan.tag})</span></h1>
+          <div class="clan-meta">
+            Level Klan: <strong>${clan.clanLevel}</strong> | 
+            Anggota: <strong>${clan.members}/50</strong> | 
+            Lokasi: <strong>${clan.location.name}</strong>
+          </div>
+          <p class="clan-description">"${clan.description}"</p>
         </div>
+      `;
+    }
 
-        <!-- Notifikasi Pesan Error -->
-        <div id="errorMsg" class="error-box hidden"></div>
+    // Fungsi menampilkan daftar anggota
+    function renderMemberList(members) {
+      const gridEl = document.getElementById('member-grid');
+      gridEl.innerHTML = ''; // bersihkan pesan loading
 
-        <!-- Tampilan Data War -->
-        <main id="statsContainer" class="hidden">
-            <!-- Header Status Perang -->
-            <div class="card war-header">
-                <h2 id="warState">WAR STATE</h2>
-                <p id="warEndTime"></p>
-            </div>
+      members.forEach(member => {
+        const card = document.createElement('div');
+        card.className = `member-card ${member.role}`;
 
-            <!-- Komparasi Skor Tim -->
-            <div class="war-vs">
-                <!-- Home Clan -->
-                <div class="clan-card home">
-                    <img id="clanBadge" src="" alt="Clan Badge">
-                    <h3 id="clanName">Clan Name</h3>
-                    <p id="clanTagDisplay" class="tag"></p>
-                    <div class="stat-box">
-                        <span class="label">Bintang:</span>
-                        <span id="clanStars" class="value highlight">0</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="label">Kerusakan (Destruction):</span>
-                        <span id="clanDestruction" class="value">0%</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="label">Serangan Digunakan:</span>
-                        <span id="clanAttacks" class="value">0</span>
-                    </div>
-                </div>
+        card.innerHTML = `
+          <div class="member-header">
+            <span class="member-name">${member.name}</span>
+            <span class="member-rank">#${member.clanRank}</span>
+          </div>
+          <div class="member-role">${formatRole(member.role)}</div>
+          <div class="member-details">
+            <div>🏛️ Town Hall: <strong>TH ${member.townHallLevel}</strong></div>
+            <div>⭐ Exp Level: <strong>${member.expLevel}</strong></div>
+            <div>🏆 Trofi: <strong>${member.trophies}</strong></div>
+          </div>
+          <div class="donations">
+            <span>Diberikan: ${member.donations}</span>
+            <span>Diterima: ${member.donationsReceived}</span>
+          </div>
+        `;
 
-                <div class="vs-divider">VS</div>
+        gridEl.appendChild(card);
+      });
+    }
 
-                <!-- Opponent Clan -->
-                <div class="clan-card opponent">
-                    <img id="oppBadge" src="" alt="Opponent Badge">
-                    <h3 id="oppName">Opponent Name</h3>
-                    <p id="oppTagDisplay" class="tag"></p>
-                    <div class="stat-box">
-                        <span class="label">Bintang:</span>
-                        <span id="oppStars" class="value highlight">0</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="label">Kerusakan (Destruction):</span>
-                        <span id="oppDestruction" class="value">0%</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="label">Serangan Digunakan:</span>
-                        <span id="oppAttacks" class="value">0</span>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script src="api.js"></script>
+    // Fungsi pembantu untuk mempercantik penulisan Role
+    function formatRole(role) {
+      switch(role) {
+        case 'leader': return '👑 Leader';
+        case 'coLeader': return '🌟 Co-Leader';
+        case 'admin': return '🛡️ Elder';
+        default: return '⚔️ Member';
+      }
+    }
+  </script>
 </body>
 </html>
