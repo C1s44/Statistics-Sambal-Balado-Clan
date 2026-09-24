@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 // Tag Klan Anda (ganti # dengan %23 untuk URL)
-const CLAN_TAG = '%23CPJQ2JV'; 
+const CLAN_TAG = '%232RVRP900V'; 
 const API_TOKEN = process.env.COC_API_TOKEN; // Diambil dari environment variable
 
 async function getClanData() {
