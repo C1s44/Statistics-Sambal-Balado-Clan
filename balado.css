@@ -45,7 +45,7 @@ body {
     transition: all 0.3s ease;
 }
 
-/* Gaya tombol saat aktif (seperti tombol 'Home') */
+/* Gaya tombol saat aktif */
 .nav-btn.active {
     background-color: #5c3eb8; /* Warna ungu tombol aktif */
     color: #ffffff; /* Warna teks aktif */
