@@ -1,36 +1,103 @@
-name: Update Clan Data (Daily)
+name: Download CoC Clan Data
+
 on:
   schedule:
-    - cron: '0 9 * * *' # Runs once a day at 9am UTC
+    # Run setiap hari jam 12 UTC (7 pagi WIB)
+    - cron: '0 12 * * *'
+  
+  # Juga bisa trigger manual
   workflow_dispatch:
 
 jobs:
-  update-clan:
+  download:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout Repo
+      # Step 1: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Setup Python
+        with:
+          fetch-depth: 0
+      
+      # Step 2: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-
-      - name: Install Dependencies
-        run: pip install requests python-dotenv
-
-      - name: Run Clan Scraper
+      
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests python-dotenv
+      
+      # Step 4: Create directories
+      - name: Create directories
+        run: |
+          mkdir -p data/clan_stats
+          echo "Created: data/clan_stats"
+          ls -la data/
+      
+      # Step 5: Download data
+      - name: Download CoC clan data
         env:
-          COC_API_TOKEN: ${{ secrets.COC_API_TOKEN }}
           CLAN_TAG: ${{ secrets.CLAN_TAG }}
+          API_TYPE: royaleapi
+          # COC_API_TOKEN: ${{ secrets.COC_API_TOKEN }}  # Hanya jika pakai official API
+        run: python coc_downloader_robust.py
+      
+      # Step 6: Check output
+      - name: Check output files
         run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)/scrapers
-          python scrapers/clan_scraper.py
-
-      - name: Commit and Push
+          echo "=== Checking output files ==="
+          ls -la data/clan_stats/
+          echo ""
+          echo "=== File sizes ==="
+          du -h data/clan_stats/*
+      
+      # Step 7: Show first lines (debug)
+      - name: Preview data files
         run: |
-          git config --global user.name "Stats Bot"
-          git config --global user.email "bot@github.com"
-          git add data/
-          git commit -m "Auto-update clan members" || exit 0
-          git push
+          echo "=== clan_info.json (first 10 lines) ==="
+          head -n 10 data/clan_stats/clan_info.json || echo "File not found"
+          echo ""
+          echo "=== members.json (first 5 lines) ==="
+          head -n 5 data/clan_stats/members.json || echo "File not found"
+      
+      # Step 8: Commit & push changes
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Check if there are changes
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected, committing..."
+            git add data/clan_stats/
+            git commit -m "Update CoC clan data - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            git push origin main
+            echo "✅ Changes pushed"
+          else
+            echo "No changes to commit"
+          fi
+      
+      # Step 9: Show debug info on failure
+      - name: Debug on failure
+        if: failure()
+        run: |
+          echo "=== Debug Information ==="
+          echo "Current directory: $(pwd)"
+          echo "Directory structure:"
+          find . -type f -name "*.json" | head -20
+          echo ""
+          echo "=== GitHub Actions environment ==="
+          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          echo "GITHUB_SHA: $GITHUB_SHA"
+          echo ""
+          echo "=== Python info ==="
+          python --version
+          pip list | grep -E "requests|dotenv"
+          echo ""
+          echo "=== Check if script exists ==="
+          ls -la coc_downloader_robust.py
+          
