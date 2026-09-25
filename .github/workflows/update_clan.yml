@@ -38,14 +38,13 @@ jobs:
           echo "Created: data/clan_stats"
           ls -la data/
       
-      # Step 5: Download data
-      - name: Download CoC clan data
+      - name: Run Clan Scraper
         env:
+          COC_API_TOKEN: ${{ secrets.COC_API_TOKEN }}
           CLAN_TAG: ${{ secrets.CLAN_TAG }}
-          API_TYPE: royaleapi
-          # COC_API_TOKEN: ${{ secrets.COC_API_TOKEN }}  # Hanya jika pakai official API
-        run: python main_downloader.py
-      
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)/scrapers
+          python scrapers/clan_scraper.py
       # Step 6: Check output
       - name: Check output files
         run: |
